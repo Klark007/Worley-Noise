@@ -1,9 +1,10 @@
 #include "Worley.h"
 
+#include<cmath> // for pow, sqrt
+#include <stdlib.h> // for rand
+#include <algorithm> // for min
+#include <limits>
 #include <iostream>
-#include <random>
-#include <stdlib.h>
-#include <chrono>
 
 #include "stb_image.h"
 #include "math_helper.h"
@@ -18,27 +19,8 @@ Worley<T>::Worley(uint res_x, uint res_y, uint grid_x, uint grid_y)
 	g_x = grid_x;
 	g_y = grid_y;
 
-	generate_points1();
-
-	int j = 1000;
-	auto begin1 = std::chrono::steady_clock::now();
-	for (int i = 0; i < j; i++) {
-		generate_points1();
-	}
-	auto end1 = std::chrono::steady_clock::now();
-	auto t1 = std::chrono::duration_cast<std::chrono::microseconds>(end1 - begin1).count();
-	std::cout << "Duration with better random: " << t1/j << std::endl;
-
-	generate_points2();
-
-	auto begin2 = std::chrono::steady_clock::now();
-	for (int i = 0; i < j; i++) {
-		generate_points2();
-	}
-	auto end2 = std::chrono::steady_clock::now();
-	auto t2 = std::chrono::duration_cast<std::chrono::microseconds>(end2 - begin2).count();
-	std::cout << "Duration with other random: " << t2/j << std::endl;
-
+	generate_points();
+	generate_img();
 }
 
 template<class T>
@@ -50,49 +32,88 @@ Worley<T>::~Worley()
 template<class T>
 inline void Worley<T>::generate_points()
 {
-	std::random_device rd;
-	std::uniform_real_distribution<> dis(0.0, 1.0);
-
-	for (uint x = 0; x < g_x; x++) {
-		for (uint y = 0; y < g_y; y++) {
-			for (uint c = 0; c < WORLEY_NR_CHANNELS; c++) {
-				double d1 = dis(rd);
-				double d2 = dis(rd);
-				grid_points.insert({ {x,y,c}, {d1,d2} });
-			}
-		}
-	}
-}
-
-template<class T>
-inline void Worley<T>::generate_points1()
-{
-	std::random_device rd;
-	std::uniform_real_distribution<> dis(0.0, 1.0);
-
-	for (uint x = 0; x < g_x; x++) {
-		for (uint y = 0; y < g_y; y++) {
-			for (uint c = 0; c < WORLEY_NR_CHANNELS; c++) {
-				double d1 = dis(rd);
-				double d2 = dis(rd);
-				grid_points.insert({ {x,y,c}, {d1,d2} });
-			}
-		}
-	}
-}
-
-template<class T>
-inline void Worley<T>::generate_points2()
-{
 	for (uint x = 0; x < g_x; x++) {
 		for (uint y = 0; y < g_y; y++) {
 			for (uint c = 0; c < WORLEY_NR_CHANNELS; c++) {
 				double d1 = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);;
 				double d2 = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);;
-				grid_points.insert({ {x,y,c}, {d1,d2} });
+				grid_points.insert({ {x,y,c}, {x+d1,y+d2} });
+				std::cerr << x + d1 << "," << y + d2 << std::endl;
 			}
 		}
 	}
 }
 
+template<class T>
+void Worley<T>::generate_img()
+{
+	std::cerr << "Size mult by: " << (unsigned long)std::numeric_limits<T>::max() << std::endl;
+
+	std::cout << "P3\n" << r_x << ' ' << r_y << "\n255\n";
+
+	double max_dist = 0.0;
+	for (uint y = 0; y < r_y; y++) {
+		for (uint x = 0; x < r_x; x++) {
+			for (uint c = 0; c < WORLEY_NR_CHANNELS; c++) {
+				double px = remap((double)x+0.5, 0.0, (double)r_x, 0.0, (double)g_x);
+				double py = remap((double)y+0.5, 0.0, (double)r_y, 0.0, (double)g_y);
+
+				//std::cerr << px << "," << py << ": ";
+
+
+				int ix = (int) floor(px);
+				int iy = (int) floor(py);
+
+				double distance = std::min({
+					distance_to_point_in_grid(px, py, ix, iy, c),
+					distance_to_point_in_grid(px, py, ix - 1, iy, c),
+					distance_to_point_in_grid(px, py, ix + 1, iy, c),
+					distance_to_point_in_grid(px, py, ix, iy - 1, c),
+					distance_to_point_in_grid(px, py, ix, iy + 1, c),
+
+					distance_to_point_in_grid(px, py, ix - 1, iy - 1, c),
+					distance_to_point_in_grid(px, py, ix + 1, iy - 1, c),
+					distance_to_point_in_grid(px, py, ix - 1, iy + 1, c),
+					distance_to_point_in_grid(px, py, ix + 1, iy + 1, c)
+				});
+				max_dist = std::max(distance, max_dist);
+
+				// assume we only use integer types as T
+				// max distance is 1.5 in x and y
+
+				T val = static_cast <T> (distance / std::sqrt(2) * std::numeric_limits<T>::max());
+				//std::cerr << distance <<"," << (unsigned long)val << std::endl;
+				img_data[gen_img_idx(x, y, c)] = val;
+				std::cout << (unsigned long) val << ' ' << (unsigned long) val << ' ' << (unsigned long) val << std::endl;
+			}
+		}
+	}
+
+	std::cerr << "Assumed max distance: " << std::sqrt(2) << "; Actual max: " << max_dist << std::endl;
+}
+
+template<class T>
+double Worley<T>::distance_to_point_in_grid(double px, double py, int ix, int iy, uint ic) const
+{
+	std::pair<double, double> gp = grid_points.at({ ix % g_x, iy % g_y, ic % WORLEY_NR_CHANNELS });
+	
+	double off_x = 0.0;
+	double off_y = 0.0;
+
+	if (ix < 0) {
+		off_x = (double) g_x;
+	} else if (ix >= g_x) {
+		off_x = -((double) g_y);
+	}
+
+	if (iy < 0) {
+		off_y = (double) g_y;
+	} else if (iy >= g_y) {
+		off_y = -((double) g_x);
+	}
+
+	return std::sqrt(std::pow(px + off_x - gp.first, 2) + std::pow(py + off_y - gp.second, 2));
+}
+
+// assume we only use integer types as T
 template class Worley<unsigned char>;

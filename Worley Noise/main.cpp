@@ -6,7 +6,7 @@
 #include "Worley.h"
 
 int main() {
-    Worley<unsigned char> w(0,0,100,100);
+    Worley<unsigned char> w(1024,1024,16,16);
 
     return 0;
 }
