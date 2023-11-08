@@ -10,15 +10,13 @@
 #include "math_helper.h"
 
 template<class T>
-Worley<T>::Worley(uint res_x, uint res_y, uint grid_x, uint grid_y)
+Worley<T>::Worley(uint res_x, uint res_y, std::vector<std::pair<uint, uint> > grid_res)
+	: grid_res {grid_res}
 {
 	img_data = new T[res_x * res_y * WORLEY_NR_CHANNELS];
 	r_x = res_x;
 	r_y = res_y;
-
-	g_x = grid_x;
-	g_y = grid_y;
-
+	
 	generate_points();
 	generate_img();
 }
@@ -32,13 +30,15 @@ Worley<T>::~Worley()
 template<class T>
 inline void Worley<T>::generate_points()
 {
-	for (uint x = 0; x < g_x; x++) {
-		for (uint y = 0; y < g_y; y++) {
-			for (uint c = 0; c < WORLEY_NR_CHANNELS; c++) {
-				double d1 = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);;
-				double d2 = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);;
+	for (uint c = 0; c < WORLEY_NR_CHANNELS; c++) {
+		uint g_x = grid_res[c].first;
+		uint g_y = grid_res[c].second;
+
+		for (uint x = 0; x < g_x; x++) {
+			for (uint y = 0; y < g_y; y++) {
+				double d1 = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+				double d2 = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
 				grid_points.insert({ {x,y,c}, {x+d1,y+d2} });
-				std::cerr << x + d1 << "," << y + d2 << std::endl;
 			}
 		}
 	}
@@ -55,6 +55,9 @@ void Worley<T>::generate_img()
 	for (uint y = 0; y < r_y; y++) {
 		for (uint x = 0; x < r_x; x++) {
 			for (uint c = 0; c < WORLEY_NR_CHANNELS; c++) {
+				uint g_x = grid_res[c].first;
+				uint g_y = grid_res[c].second;
+
 				double px = remap((double)x+0.5, 0.0, (double)r_x, 0.0, (double)g_x);
 				double py = remap((double)y+0.5, 0.0, (double)r_y, 0.0, (double)g_y);
 
@@ -84,7 +87,16 @@ void Worley<T>::generate_img()
 				T val = static_cast <T> (distance / std::sqrt(2) * std::numeric_limits<T>::max());
 				//std::cerr << distance <<"," << (unsigned long)val << std::endl;
 				img_data[gen_img_idx(x, y, c)] = val;
-				std::cout << (unsigned long) val << ' ' << (unsigned long) val << ' ' << (unsigned long) val << std::endl;
+				if (WORLEY_NR_CHANNELS == 1) {
+					std::cout << (unsigned long)val << ' ' << (unsigned long)val << ' ' << (unsigned long)val << std::endl;
+				} else if (WORLEY_NR_CHANNELS == 3) {
+					if (c == 2) {
+						std::cout << (unsigned long)val << std::endl;
+					}
+					else {
+						std::cout << (unsigned long)val << ' ';
+					}
+				}
 			}
 		}
 	}
@@ -95,7 +107,10 @@ void Worley<T>::generate_img()
 template<class T>
 double Worley<T>::distance_to_point_in_grid(double px, double py, int ix, int iy, uint ic) const
 {
-	std::pair<double, double> gp = grid_points.at({ ix % g_x, iy % g_y, ic % WORLEY_NR_CHANNELS });
+	uint g_x = grid_res[ic].first;
+	uint g_y = grid_res[ic].second;
+
+	std::pair<double, double> gp = grid_points.at({ ix % g_x, iy % g_y, ic });
 	
 	double off_x = 0.0;
 	double off_y = 0.0;
