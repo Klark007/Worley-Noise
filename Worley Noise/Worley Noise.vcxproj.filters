@@ -21,6 +21,9 @@
     <ClCompile Include="Worley.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Worley3D.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Worley.h">
@@ -30,6 +33,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="math_helper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Worley3D.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
