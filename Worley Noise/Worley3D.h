@@ -4,6 +4,7 @@ typedef unsigned int uint;
 
 #include <map>
 #include <vector>
+#include <array>
 #include <tuple>
 #include <fstream>
 
@@ -23,11 +24,11 @@ private:
 	unsigned int r_x, r_y, r_z;
 	std::vector<std::tuple<uint, uint, uint> > grid_res;
 
-	// TODO: Replace with std::array
+	// TODO: Replace with std::vector
 	T* img_data;
 	unsigned int gen_img_idx(unsigned int x, unsigned int y, unsigned int z, unsigned int c) const;
 
-	std::map<std::tuple<uint, uint, uint, uint>, std::tuple<double, double, double> > grid_points;
+	std::array<std::vector<std::tuple<double, double, double> >, WORLEY_NR_CHANNELS> grid_points; // stores the per channel grid in a one dimensional vector
 	void generate_points();
 
 	void generate_img();

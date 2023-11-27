@@ -13,8 +13,8 @@
 #include "stb_image.h"
 #include "math_helper.h"
 
-#define SAVE_TO_FILES false
-
+#define WN_SAVE_TO_FILES false
+#define WN_PROFILE false
 
 template<class T>
 Worley3D<T>::Worley3D(uint res_x, uint res_y, uint res_z, std::vector<std::tuple<uint, uint, uint>> grid_res)
@@ -34,13 +34,29 @@ Worley3D<T>::Worley3D(uint res_x, uint res_y, uint res_z, std::vector<std::tuple
 		files.push_back(std::ofstream (name, std::ofstream::out));
 	}
 
+	for (uint c = 0; c < WORLEY_NR_CHANNELS; c++) {
+		uint g_x = std::get<0>(grid_res[c]);
+		uint g_y = std::get<1>(grid_res[c]);
+		uint g_z = std::get<2>(grid_res[c]);
+
+		grid_points[c] = std::vector<std::tuple<double, double, double>>(g_z * g_y * g_x);
+	}
+
 	generate_points();
 	generate_img();
 }
+
+#if WN_PROFILE
 typedef std::chrono::steady_clock::time_point time_point;
 
 inline long long difference(time_point a, time_point b) {
 	return std::chrono::duration_cast<std::chrono::milliseconds>(b - a).count();
+}
+#endif
+
+// index into vector representing grid
+inline uint gen_grid_idx(uint x, uint y, uint z, uint g_x, uint g_y) {
+	return (y + z * g_y) * g_x + x;
 }
 
 template<class T>
@@ -56,7 +72,9 @@ Worley3D<T>::~Worley3D()
 template<class T>
 inline void Worley3D<T>::generate_points()
 {
+#if WN_PROFILE
 	auto begin = std::chrono::steady_clock::now();
+#endif
 
 	for (uint c = 0; c < WORLEY_NR_CHANNELS; c++) {
 		uint g_x = std::get<0>(grid_res[c]);
@@ -70,14 +88,16 @@ inline void Worley3D<T>::generate_points()
 					double d2 = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
 					double d3 = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
 
-					grid_points.insert({ std::make_tuple(x,y,z,c), std::make_tuple(x + d1,y + d2, z + d3) });
+					grid_points[c][gen_grid_idx(x, y, z, g_x, g_y)] = std::make_tuple(x + d1, y + d2, z + d3);
 				}
 			}
 		}
 	}
 
+#if WN_PROFILE
 	auto end = std::chrono::steady_clock::now();
 	std::cout << "TIME: POINT GENERATION: " << difference(begin, end) << std::endl;
+#endif
 }
 
 template<class T>
@@ -85,11 +105,14 @@ void Worley3D<T>::generate_img()
 {
 	double max_dist = 0.0;
 	long long sum = 0.0;
-	for (uint z = 0; z < 10; z++) {
+	for (uint z = 0; z < r_z; z++) {
 		std::cout << "Generate image " << z << std::endl;
-		auto begin = std::chrono::steady_clock::now();
 
-#if SAVE_TO_FILES
+#if WN_PROFILE
+		auto begin = std::chrono::steady_clock::now();
+#endif
+
+#if WN_SAVE_TO_FILES
 		std::ofstream& file = files.at(z);
 		file << "P3\n" << r_x << ' ' << r_y << "\n255\n";
 #endif
@@ -151,7 +174,7 @@ void Worley3D<T>::generate_img()
 					T val = static_cast <T> (distance / std::sqrt(3) * std::numeric_limits<T>::max());
 					//std::cerr << distance <<"," << (unsigned long)val << std::endl;
 					img_data[gen_img_idx(x, y, z, c)] = val;
-#if SAVE_TO_FILES
+#if WN_SAVE_TO_FILES
 					if (WORLEY_NR_CHANNELS == 1) {
 						file << (unsigned long)val << ' ' << (unsigned long)val << ' ' << (unsigned long)val << std::endl;
 					}
@@ -167,15 +190,18 @@ void Worley3D<T>::generate_img()
 				}
 			}
 		}
-
+#if WN_PROFILE
 		auto end = std::chrono::steady_clock::now();
 		sum +=  difference(begin, end);
-#if SAVE_TO_FILES
+#endif
+#if WN_SAVE_TO_FILES
 		file << std::endl;
 #endif
 	}
-	std::cout << "TIME: Average time for pixel: " << (sum/10) << std::endl;
+#if WN_PROFILE
+	std::cout << "TIME: Average time for pixel: " << (sum/ r_z) << std::endl;
 	std::cout << "Assumed max distance: " << std::sqrt(3) << "; Actual max: " << max_dist << std::endl;
+#endif
 }
 
 template<class T>
@@ -185,7 +211,7 @@ double Worley3D<T>::distance_to_point_in_grid(double px, double py, double pz, i
 	uint g_y = std::get<1>(grid_res[ic]);
 	uint g_z = std::get<2>(grid_res[ic]);
 
-	std::tuple<double, double, double> gp = grid_points.at({ ix % g_x, iy % g_y, iz % g_z, ic });
+	std::tuple<double, double, double> gp = grid_points[ic][gen_grid_idx(ix % g_x, iy % g_y, iz % g_z, g_x, g_y)];
 
 	double off_x = 0.0;
 	double off_y = 0.0;
