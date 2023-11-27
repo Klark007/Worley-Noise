@@ -4,11 +4,16 @@
 #include <stdlib.h> // for rand
 #include <algorithm> // for min
 #include <limits>
+#include <chrono>
 
 #include <iostream>
+#include <string>
+#include <filesystem>
 
 #include "stb_image.h"
 #include "math_helper.h"
+
+#define SAVE_TO_FILES false
 
 
 template<class T>
@@ -20,19 +25,39 @@ Worley3D<T>::Worley3D(uint res_x, uint res_y, uint res_z, std::vector<std::tuple
 	r_y = res_y;
 	r_z = res_z;
 
+	// change config: https://stackoverflow.com/questions/64042721/std-has-no-member-filesystem-in-c-17
+	if (!std::filesystem::exists("imgs")) {
+		std::filesystem::create_directory("imgs");
+	}
+	for (uint z = 0; z < r_z; z++) {
+		std::string name = "imgs/img" + std::to_string(z) + ".ppm";
+		files.push_back(std::ofstream (name, std::ofstream::out));
+	}
+
 	generate_points();
 	generate_img();
+}
+typedef std::chrono::steady_clock::time_point time_point;
+
+inline long long difference(time_point a, time_point b) {
+	return std::chrono::duration_cast<std::chrono::milliseconds>(b - a).count();
 }
 
 template<class T>
 Worley3D<T>::~Worley3D()
 {
 	delete[] img_data;
+
+	for (uint z = 0; z < r_z; z++) {
+		files.at(z).close();
+	}
 }
 
 template<class T>
 inline void Worley3D<T>::generate_points()
 {
+	auto begin = std::chrono::steady_clock::now();
+
 	for (uint c = 0; c < WORLEY_NR_CHANNELS; c++) {
 		uint g_x = std::get<0>(grid_res[c]);
 		uint g_y = std::get<1>(grid_res[c]);
@@ -50,93 +75,107 @@ inline void Worley3D<T>::generate_points()
 			}
 		}
 	}
+
+	auto end = std::chrono::steady_clock::now();
+	std::cout << "TIME: POINT GENERATION: " << difference(begin, end) << std::endl;
 }
 
 template<class T>
 void Worley3D<T>::generate_img()
 {
-	std::cerr << "Size mult by: " << (unsigned long)std::numeric_limits<T>::max() << std::endl;
-
-	uint z = 0;
-	std::cout << "P3\n" << r_x << ' ' << r_y << "\n255\n";
-
 	double max_dist = 0.0;
-	for (uint y = 0; y < r_y; y++) {
-		for (uint x = 0; x < r_x; x++) {
-			for (uint c = 0; c < WORLEY_NR_CHANNELS; c++) {
-				uint g_x = std::get<0>(grid_res[c]);
-				uint g_y = std::get<1>(grid_res[c]);
-				uint g_z = std::get<2>(grid_res[c]);
+	long long sum = 0.0;
+	for (uint z = 0; z < 10; z++) {
+		std::cout << "Generate image " << z << std::endl;
+		auto begin = std::chrono::steady_clock::now();
 
-				double px = remap((double)x + 0.5, 0.0, (double)r_x, 0.0, (double)g_x);
-				double py = remap((double)y + 0.5, 0.0, (double)r_y, 0.0, (double)g_y);
-				double pz = remap((double)z + 0.5, 0.0, (double)r_z, 0.0, (double)g_z);
+#if SAVE_TO_FILES
+		std::ofstream& file = files.at(z);
+		file << "P3\n" << r_x << ' ' << r_y << "\n255\n";
+#endif
 
-				//std::cerr << px << "," << py << ": ";
+		for (uint y = 0; y < r_y; y++) {
+			for (uint x = 0; x < r_x; x++) {
+				for (uint c = 0; c < WORLEY_NR_CHANNELS; c++) {
+					uint g_x = std::get<0>(grid_res[c]);
+					uint g_y = std::get<1>(grid_res[c]);
+					uint g_z = std::get<2>(grid_res[c]);
 
+					double px = remap((double)x + 0.5, 0.0, (double)r_x, 0.0, (double)g_x);
+					double py = remap((double)y + 0.5, 0.0, (double)r_y, 0.0, (double)g_y);
+					double pz = remap((double)z + 0.5, 0.0, (double)r_z, 0.0, (double)g_z);
 
-				int ix = (int)floor(px);
-				int iy = (int)floor(py);
-				int iz = (int)floor(pz);
+					int ix = (int)floor(px);
+					int iy = (int)floor(py);
+					int iz = (int)floor(pz);
 
-				double distance = std::min({
-					distance_to_point_in_grid(px, py, pz, ix,     iy, iz - 1, c),
-					distance_to_point_in_grid(px, py, pz, ix - 1, iy, iz - 1, c),
-					distance_to_point_in_grid(px, py, pz, ix + 1, iy, iz - 1, c),
-					distance_to_point_in_grid(px, py, pz, ix, iy - 1, iz - 1, c),
-					distance_to_point_in_grid(px, py, pz, ix, iy + 1, iz - 1, c),
+					double distance = std::min({
+						distance_to_point_in_grid(px, py, pz, ix,     iy, iz - 1, c),
+						distance_to_point_in_grid(px, py, pz, ix - 1, iy, iz - 1, c),
+						distance_to_point_in_grid(px, py, pz, ix + 1, iy, iz - 1, c),
+						distance_to_point_in_grid(px, py, pz, ix, iy - 1, iz - 1, c),
+						distance_to_point_in_grid(px, py, pz, ix, iy + 1, iz - 1, c),
 
-					distance_to_point_in_grid(px, py, pz, ix - 1, iy - 1, iz - 1, c),
-					distance_to_point_in_grid(px, py, pz, ix + 1, iy - 1, iz - 1, c),
-					distance_to_point_in_grid(px, py, pz, ix - 1, iy + 1, iz - 1, c),
-					distance_to_point_in_grid(px, py, pz, ix + 1, iy + 1, iz - 1, c),
+						distance_to_point_in_grid(px, py, pz, ix - 1, iy - 1, iz - 1, c),
+						distance_to_point_in_grid(px, py, pz, ix + 1, iy - 1, iz - 1, c),
+						distance_to_point_in_grid(px, py, pz, ix - 1, iy + 1, iz - 1, c),
+						distance_to_point_in_grid(px, py, pz, ix + 1, iy + 1, iz - 1, c),
 
-					distance_to_point_in_grid(px, py, pz, ix,     iy, iz, c),
-					distance_to_point_in_grid(px, py, pz, ix - 1, iy, iz, c),
-					distance_to_point_in_grid(px, py, pz, ix + 1, iy, iz, c),
-					distance_to_point_in_grid(px, py, pz, ix, iy - 1, iz, c),
-					distance_to_point_in_grid(px, py, pz, ix, iy + 1, iz, c),
+						distance_to_point_in_grid(px, py, pz, ix,     iy, iz, c),
+						distance_to_point_in_grid(px, py, pz, ix - 1, iy, iz, c),
+						distance_to_point_in_grid(px, py, pz, ix + 1, iy, iz, c),
+						distance_to_point_in_grid(px, py, pz, ix, iy - 1, iz, c),
+						distance_to_point_in_grid(px, py, pz, ix, iy + 1, iz, c),
 													
-					distance_to_point_in_grid(px, py, pz, ix - 1, iy - 1, iz, c),
-					distance_to_point_in_grid(px, py, pz, ix + 1, iy - 1, iz, c),
-					distance_to_point_in_grid(px, py, pz, ix - 1, iy + 1, iz, c),
-					distance_to_point_in_grid(px, py, pz, ix + 1, iy + 1, iz, c),
+						distance_to_point_in_grid(px, py, pz, ix - 1, iy - 1, iz, c),
+						distance_to_point_in_grid(px, py, pz, ix + 1, iy - 1, iz, c),
+						distance_to_point_in_grid(px, py, pz, ix - 1, iy + 1, iz, c),
+						distance_to_point_in_grid(px, py, pz, ix + 1, iy + 1, iz, c),
 
-					distance_to_point_in_grid(px, py, pz, ix,     iy, iz + 1, c),
-					distance_to_point_in_grid(px, py, pz, ix - 1, iy, iz + 1, c),
-					distance_to_point_in_grid(px, py, pz, ix + 1, iy, iz + 1, c),
-					distance_to_point_in_grid(px, py, pz, ix, iy - 1, iz + 1, c),
-					distance_to_point_in_grid(px, py, pz, ix, iy + 1, iz + 1, c),
+						distance_to_point_in_grid(px, py, pz, ix,     iy, iz + 1, c),
+						distance_to_point_in_grid(px, py, pz, ix - 1, iy, iz + 1, c),
+						distance_to_point_in_grid(px, py, pz, ix + 1, iy, iz + 1, c),
+						distance_to_point_in_grid(px, py, pz, ix, iy - 1, iz + 1, c),
+						distance_to_point_in_grid(px, py, pz, ix, iy + 1, iz + 1, c),
 
-					distance_to_point_in_grid(px, py, pz, ix - 1, iy - 1, iz + 1, c),
-					distance_to_point_in_grid(px, py, pz, ix + 1, iy - 1, iz + 1, c),
-					distance_to_point_in_grid(px, py, pz, ix - 1, iy + 1, iz + 1, c),
-					distance_to_point_in_grid(px, py, pz, ix + 1, iy + 1, iz + 1, c),
-					});
-				max_dist = std::max(distance, max_dist);
+						distance_to_point_in_grid(px, py, pz, ix - 1, iy - 1, iz + 1, c),
+						distance_to_point_in_grid(px, py, pz, ix + 1, iy - 1, iz + 1, c),
+						distance_to_point_in_grid(px, py, pz, ix - 1, iy + 1, iz + 1, c),
+						distance_to_point_in_grid(px, py, pz, ix + 1, iy + 1, iz + 1, c),
+						});
+					max_dist = std::max(distance, max_dist);
 
-				// assume we only use integer types as T
-				// max distance is 1.5 in x and y
+					// assume we only use integer types as T
+					// max distance is 1.5 in x and y
 
-				T val = static_cast <T> (distance / std::sqrt(3) * std::numeric_limits<T>::max());
-				//std::cerr << distance <<"," << (unsigned long)val << std::endl;
-				img_data[gen_img_idx(x, y, z, c)] = val;
-				if (WORLEY_NR_CHANNELS == 1) {
-					std::cout << (unsigned long)val << ' ' << (unsigned long)val << ' ' << (unsigned long)val << std::endl;
-				}
-				else if (WORLEY_NR_CHANNELS == 3) {
-					if (c == 2) {
-						std::cout << (unsigned long)val << std::endl;
+					T val = static_cast <T> (distance / std::sqrt(3) * std::numeric_limits<T>::max());
+					//std::cerr << distance <<"," << (unsigned long)val << std::endl;
+					img_data[gen_img_idx(x, y, z, c)] = val;
+#if SAVE_TO_FILES
+					if (WORLEY_NR_CHANNELS == 1) {
+						file << (unsigned long)val << ' ' << (unsigned long)val << ' ' << (unsigned long)val << std::endl;
 					}
-					else {
-						std::cout << (unsigned long)val << ' ';
+					else if (WORLEY_NR_CHANNELS == 3) {
+						if (c == 2) {
+							file << (unsigned long)val << '\n';
+						}
+						else {
+							file << (unsigned long)val << ' ';
+						}
 					}
+#endif
 				}
 			}
 		}
-	}
 
-	std::cerr << "Assumed max distance: " << std::sqrt(3) << "; Actual max: " << max_dist << std::endl;
+		auto end = std::chrono::steady_clock::now();
+		sum +=  difference(begin, end);
+#if SAVE_TO_FILES
+		file << std::endl;
+#endif
+	}
+	std::cout << "TIME: Average time for pixel: " << (sum/10) << std::endl;
+	std::cout << "Assumed max distance: " << std::sqrt(3) << "; Actual max: " << max_dist << std::endl;
 }
 
 template<class T>

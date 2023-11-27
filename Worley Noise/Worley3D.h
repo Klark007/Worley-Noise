@@ -18,7 +18,7 @@ public:
 	Worley3D(uint res_x, uint res_y, uint res_z, std::vector<std::tuple<uint, uint, uint> > grid_res);
 	~Worley3D();
 private:
-	std::vector
+	std::vector<std::ofstream> files;
 
 	unsigned int r_x, r_y, r_z;
 	std::vector<std::tuple<uint, uint, uint> > grid_res;
