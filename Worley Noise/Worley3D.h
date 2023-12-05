@@ -33,7 +33,8 @@ private:
 
 	void generate_img();
 	double distance_to_point_in_grid(double px, double py, double pz, int ix, int iy, int iz, uint ic) const;
-	T* get_data() const;
+public:
+	inline T* get_data() const;
 };
 
 template<class T>
