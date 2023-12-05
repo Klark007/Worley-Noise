@@ -9,6 +9,8 @@
 #include "stb_image.h"
 #include "math_helper.h"
 
+#define WN_OUTPUT_TO_CONSOLE false
+
 template<class T>
 Worley<T>::Worley(uint res_x, uint res_y, std::vector<std::pair<uint, uint> > grid_res)
 	: grid_res {grid_res}
@@ -49,7 +51,9 @@ void Worley<T>::generate_img()
 {
 	std::cerr << "Size mult by: " << (unsigned long)std::numeric_limits<T>::max() << std::endl;
 
+#if WN_OUTPUT_TO_CONSOLE
 	std::cout << "P3\n" << r_x << ' ' << r_y << "\n255\n";
+#endif
 
 	double max_dist = 0.0;
 	for (uint y = 0; y < r_y; y++) {
@@ -87,6 +91,7 @@ void Worley<T>::generate_img()
 				T val = static_cast <T> (distance / std::sqrt(2) * std::numeric_limits<T>::max());
 				//std::cerr << distance <<"," << (unsigned long)val << std::endl;
 				img_data[gen_img_idx(x, y, c)] = val;
+#if WN_OUTPUT_TO_CONSOLE
 				if (WORLEY_NR_CHANNELS == 1) {
 					std::cout << (unsigned long)val << ' ' << (unsigned long)val << ' ' << (unsigned long)val << std::endl;
 				} else if (WORLEY_NR_CHANNELS == 3) {
@@ -97,6 +102,7 @@ void Worley<T>::generate_img()
 						std::cout << (unsigned long)val << ' ';
 					}
 				}
+#endif
 			}
 		}
 	}

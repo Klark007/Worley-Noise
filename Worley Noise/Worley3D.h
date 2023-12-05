@@ -38,7 +38,7 @@ public:
 };
 
 template<class T>
-T* Worley3D<T>::get_data() const
+inline T* Worley3D<T>::get_data() const
 {
 	return img_data;
 }
