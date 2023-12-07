@@ -15,7 +15,7 @@
 #include "math_helper.h"
 
 #define WN_SAVE_TO_FILES false
-#define WN_PROFILE true
+#define WN_PROFILE false
 
 #if WN_PROFILE
 #include <chrono>
@@ -30,6 +30,7 @@ Worley3D<T>::Worley3D(uint res_x, uint res_y, uint res_z, std::vector<std::tuple
 	r_y = res_y;
 	r_z = res_z;
 
+#if WN_SAVE_TO_FILES
 	// change config: https://stackoverflow.com/questions/64042721/std-has-no-member-filesystem-in-c-17
 	if (!std::filesystem::exists("imgs")) {
 		std::filesystem::create_directory("imgs");
@@ -38,6 +39,7 @@ Worley3D<T>::Worley3D(uint res_x, uint res_y, uint res_z, std::vector<std::tuple
 		std::string name = "imgs/img" + std::to_string(z) + ".ppm";
 		files.push_back(std::ofstream (name, std::ofstream::out));
 	}
+#endif
 
 	for (uint c = 0; c < WORLEY_NR_CHANNELS; c++) {
 		uint g_x = std::get<0>(grid_res[c]);
