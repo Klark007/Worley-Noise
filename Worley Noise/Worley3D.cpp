@@ -3,8 +3,9 @@
 #include<cmath> // for pow, sqrt
 #include <stdlib.h> // for rand
 #include <algorithm> // for min
+#include <numeric> // for iota
+#include <execution> // for parallel for_each
 #include <limits>
-#include <chrono>
 
 #include <iostream>
 #include <string>
@@ -14,7 +15,11 @@
 #include "math_helper.h"
 
 #define WN_SAVE_TO_FILES false
-#define WN_PROFILE false
+#define WN_PROFILE true
+
+#if WN_PROFILE
+#include <chrono>
+#endif
 
 template<class T>
 Worley3D<T>::Worley3D(uint res_x, uint res_y, uint res_z, std::vector<std::tuple<uint, uint, uint>> grid_res)
@@ -49,7 +54,7 @@ Worley3D<T>::Worley3D(uint res_x, uint res_y, uint res_z, std::vector<std::tuple
 #if WN_PROFILE
 typedef std::chrono::steady_clock::time_point time_point;
 
-inline long long difference(time_point a, time_point b) {
+inline long long duration(time_point a, time_point b) {
 	return std::chrono::duration_cast<std::chrono::milliseconds>(b - a).count();
 }
 #endif
@@ -96,27 +101,15 @@ inline void Worley3D<T>::generate_points()
 
 #if WN_PROFILE
 	auto end = std::chrono::steady_clock::now();
-	std::cout << "TIME: POINT GENERATION: " << difference(begin, end) << std::endl;
+	std::cout << "TIME: POINT GENERATION: " << duration(begin, end) << std::endl;
 #endif
 }
 
 template<class T>
 void Worley3D<T>::generate_img()
 {
-	double max_dist = 0.0;
-	long long sum = 0.0;
-	for (uint z = 0; z < r_z; z++) {
-		std::cout << "Generate image " << z << std::endl;
-
-#if WN_PROFILE
-		auto begin = std::chrono::steady_clock::now();
-#endif
-
-#if WN_SAVE_TO_FILES
-		std::ofstream& file = files.at(z);
-		file << "P3\n" << r_x << ' ' << r_y << "\n255\n";
-#endif
-
+	auto image_lamba = [&](uint z)
+	{
 		for (uint y = 0; y < r_y; y++) {
 			for (uint x = 0; x < r_x; x++) {
 				for (uint c = 0; c < WORLEY_NR_CHANNELS; c++) {
@@ -149,7 +142,7 @@ void Worley3D<T>::generate_img()
 						distance_to_point_in_grid(px, py, pz, ix + 1, iy, iz, c),
 						distance_to_point_in_grid(px, py, pz, ix, iy - 1, iz, c),
 						distance_to_point_in_grid(px, py, pz, ix, iy + 1, iz, c),
-													
+
 						distance_to_point_in_grid(px, py, pz, ix - 1, iy - 1, iz, c),
 						distance_to_point_in_grid(px, py, pz, ix + 1, iy - 1, iz, c),
 						distance_to_point_in_grid(px, py, pz, ix - 1, iy + 1, iz, c),
@@ -166,15 +159,42 @@ void Worley3D<T>::generate_img()
 						distance_to_point_in_grid(px, py, pz, ix - 1, iy + 1, iz + 1, c),
 						distance_to_point_in_grid(px, py, pz, ix + 1, iy + 1, iz + 1, c),
 						});
-					max_dist = std::max(distance, max_dist);
-
-					// assume we only use integer types as T
-					// max distance is 1.5 in x and y
 
 					T val = static_cast <T> (distance / std::sqrt(3) * std::numeric_limits<T>::max());
 					//std::cerr << distance <<"," << (unsigned long)val << std::endl;
 					img_data[gen_img_idx(x, y, z, c)] = val;
+				}
+			}
+		}
+	};
+
+	std::vector<uint> z_range = std::vector<uint>(r_z);
+	std::iota(z_range.begin(), z_range.end(), 0);
+
+#if WN_PROFILE
+	auto begin = std::chrono::steady_clock::now();
+#endif
+	std::for_each(
+		std::execution::par,
+		z_range.begin(),
+		z_range.end(),
+		image_lamba
+	);
+#if WN_PROFILE
+	auto end = std::chrono::steady_clock::now();
+	std::cout << "TIME: Duration in miliseconds: " << duration(begin, end)/r_z << std::endl;
+#endif
+
 #if WN_SAVE_TO_FILES
+	for (uint z = 0; z < r_z; z++) {
+
+		std::ofstream& file = files.at(z);
+		file << "P3\n" << r_x << ' ' << r_y << "\n255\n";
+
+		for (uint y = 0; y < r_y; y++) {
+			for (uint x = 0; x < r_x; x++) {
+				for (uint c = 0; c < WORLEY_NR_CHANNELS; c++) {
+					T val = img_data[gen_img_idx(x, y, z, c)];
 					if (WORLEY_NR_CHANNELS == 1) {
 						file << (unsigned long)val << ' ' << (unsigned long)val << ' ' << (unsigned long)val << std::endl;
 					}
@@ -186,21 +206,11 @@ void Worley3D<T>::generate_img()
 							file << (unsigned long)val << ' ';
 						}
 					}
-#endif
 				}
 			}
 		}
-#if WN_PROFILE
-		auto end = std::chrono::steady_clock::now();
-		sum +=  difference(begin, end);
-#endif
-#if WN_SAVE_TO_FILES
 		file << std::endl;
-#endif
 	}
-#if WN_PROFILE
-	std::cout << "TIME: Average time for pixel: " << (sum/ r_z) << std::endl;
-	std::cout << "Assumed max distance: " << std::sqrt(3) << "; Actual max: " << max_dist << std::endl;
 #endif
 }
 
