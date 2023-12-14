@@ -15,7 +15,7 @@
 #include "math_helper.h"
 
 #define WN_SAVE_TO_FILES false
-#define WN_PROFILE false
+#define WN_PROFILE true
 
 #if WN_PROFILE
 #include <chrono>
@@ -71,9 +71,11 @@ Worley3D<T>::~Worley3D()
 {
 	delete[] img_data;
 
+#if WN_SAVE_TO_FILES
 	for (uint z = 0; z < r_z; z++) {
 		files.at(z).close();
 	}
+#endif
 }
 
 template<class T>
@@ -219,11 +221,11 @@ void Worley3D<T>::generate_img()
 template<class T>
 double Worley3D<T>::distance_to_point_in_grid(double px, double py, double pz, int ix, int iy, int iz, uint ic) const
 {
-	uint g_x = std::get<0>(grid_res[ic]);
-	uint g_y = std::get<1>(grid_res[ic]);
-	uint g_z = std::get<2>(grid_res[ic]);
+	int g_x = (int) std::get<0>(grid_res[ic]);
+	int g_y = (int) std::get<1>(grid_res[ic]);
+	int g_z = (int) std::get<2>(grid_res[ic]);
 
-	std::tuple<double, double, double> gp = grid_points[ic][gen_grid_idx(ix % g_x, iy % g_y, iz % g_z, g_x, g_y)];
+	std::tuple<double, double, double> gp = grid_points[ic][gen_grid_idx((uint)(mod<int>(ix, g_x)), (uint)(mod<int>(iy, g_y)), (uint)(mod<int>(iz, g_z)), g_x, g_y)];
 
 	double off_x = 0.0;
 	double off_y = 0.0;

@@ -132,11 +132,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Noise.cpp" />
     <ClCompile Include="Worley.cpp" />
     <ClCompile Include="Worley3D.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="math_helper.h" />
+    <ClInclude Include="Noise.h" />
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="Worley.h" />
     <ClInclude Include="Worley3D.h" />
