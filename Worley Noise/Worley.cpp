@@ -13,20 +13,10 @@
 
 template<class T>
 Worley<T>::Worley(uint res_x, uint res_y, std::vector<std::pair<uint, uint> > grid_res)
-	: grid_res {grid_res}
+	: Noise<T>(res_x, res_y, WORLEY_NR_CHANNELS), grid_res {grid_res}
 {
-	img_data = new T[res_x * res_y * WORLEY_NR_CHANNELS];
-	r_x = res_x;
-	r_y = res_y;
-	
 	generate_points();
-	generate_img();
-}
-
-template<class T>
-Worley<T>::~Worley()
-{
-	delete[] img_data;
+	gen_img();
 }
 
 template<class T>
@@ -47,23 +37,23 @@ inline void Worley<T>::generate_points()
 }
 
 template<class T>
-void Worley<T>::generate_img()
+void Worley<T>::gen_img()
 {
 	std::cerr << "Size mult by: " << (unsigned long)std::numeric_limits<T>::max() << std::endl;
 
 #if WN_OUTPUT_TO_CONSOLE
-	std::cout << "P3\n" << r_x << ' ' << r_y << "\n255\n";
+	std::cout << "P3\n" << res_x << ' ' << res_y << "\n255\n";
 #endif
 
 	double max_dist = 0.0;
-	for (uint y = 0; y < r_y; y++) {
-		for (uint x = 0; x < r_x; x++) {
-			for (uint c = 0; c < WORLEY_NR_CHANNELS; c++) {
+	for (uint y = 0; y < this->res_y; y++) {
+		for (uint x = 0; x < this->res_x; x++) {
+			for (uint c = 0; c < this->nr_chl; c++) {
 				uint g_x = grid_res[c].first;
 				uint g_y = grid_res[c].second;
 
-				double px = remap((double)x+0.5, 0.0, (double)r_x, 0.0, (double)g_x);
-				double py = remap((double)y+0.5, 0.0, (double)r_y, 0.0, (double)g_y);
+				double px = remap((double)x+0.5, 0.0, (double)this->res_x, 0.0, (double)g_x);
+				double py = remap((double)y+0.5, 0.0, (double)this->res_y, 0.0, (double)g_y);
 
 				//std::cerr << px << "," << py << ": ";
 
@@ -72,25 +62,24 @@ void Worley<T>::generate_img()
 				int iy = (int) floor(py);
 
 				double distance = std::min({
-					distance_to_point_in_grid(px, py, ix, iy, c),
-					distance_to_point_in_grid(px, py, ix - 1, iy, c),
-					distance_to_point_in_grid(px, py, ix + 1, iy, c),
-					distance_to_point_in_grid(px, py, ix, iy - 1, c),
-					distance_to_point_in_grid(px, py, ix, iy + 1, c),
-
 					distance_to_point_in_grid(px, py, ix - 1, iy - 1, c),
+					distance_to_point_in_grid(px, py, ix,     iy - 1, c),
 					distance_to_point_in_grid(px, py, ix + 1, iy - 1, c),
+					
+					distance_to_point_in_grid(px, py, ix - 1, iy, c),
+					distance_to_point_in_grid(px, py, ix,     iy, c),
+					distance_to_point_in_grid(px, py, ix + 1, iy, c),
+					
 					distance_to_point_in_grid(px, py, ix - 1, iy + 1, c),
-					distance_to_point_in_grid(px, py, ix + 1, iy + 1, c)
+					distance_to_point_in_grid(px, py, ix,     iy + 1, c),
+					distance_to_point_in_grid(px, py, ix + 1, iy + 1, c),
 				});
 				max_dist = std::max(distance, max_dist);
 
 				// assume we only use integer types as T
-				// max distance is 1.5 in x and y
-
 				T val = static_cast <T> (distance / std::sqrt(2) * std::numeric_limits<T>::max());
-				//std::cerr << distance <<"," << (unsigned long)val << std::endl;
-				img_data[gen_img_idx(x, y, c)] = val;
+				//val = static_cast <T> ((ix + iy*g_x)*255/(g_x*g_y));
+				this->img_data[this->idx(x, y, c)] = val;
 #if WN_OUTPUT_TO_CONSOLE
 				if (WORLEY_NR_CHANNELS == 1) {
 					std::cout << (unsigned long)val << ' ' << (unsigned long)val << ' ' << (unsigned long)val << std::endl;
@@ -113,10 +102,8 @@ void Worley<T>::generate_img()
 template<class T>
 double Worley<T>::distance_to_point_in_grid(double px, double py, int ix, int iy, uint ic) const
 {
-	uint g_x = grid_res[ic].first;
-	uint g_y = grid_res[ic].second;
-
-	std::pair<double, double> gp = grid_points.at({ ix % g_x, iy % g_y, ic });
+	int g_x = (int) grid_res[ic].first;
+	int g_y = (int) grid_res[ic].second;
 	
 	double off_x = 0.0;
 	double off_y = 0.0;
@@ -124,14 +111,16 @@ double Worley<T>::distance_to_point_in_grid(double px, double py, int ix, int iy
 	if (ix < 0) {
 		off_x = (double) g_x;
 	} else if (ix >= g_x) {
-		off_x = -((double) g_y);
+		off_x = -((double) g_x);
 	}
 
 	if (iy < 0) {
 		off_y = (double) g_y;
 	} else if (iy >= g_y) {
-		off_y = -((double) g_x);
+		off_y = -((double) g_y);
 	}
+	
+	std::pair<double, double> gp = grid_points.at({ (uint) (mod<int>(ix,g_x)), (uint)(mod<int>(iy,g_y))  , ic });
 
 	return std::sqrt(std::pow(px + off_x - gp.first, 2) + std::pow(py + off_y - gp.second, 2));
 }

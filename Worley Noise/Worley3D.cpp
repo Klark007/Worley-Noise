@@ -233,14 +233,14 @@ double Worley3D<T>::distance_to_point_in_grid(double px, double py, double pz, i
 		off_x = (double)g_x;
 	}
 	else if (ix >= g_x) {
-		off_x = -((double)g_y);
+		off_x = -((double)g_x);
 	}
 
 	if (iy < 0) {
 		off_y = (double)g_y;
 	}
 	else if (iy >= g_y) {
-		off_y = -((double)g_x);
+		off_y = -((double)g_y);
 	}
 
 	if (iz < 0) {
