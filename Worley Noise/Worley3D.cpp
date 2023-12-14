@@ -159,7 +159,7 @@ void Worley3D<T>::gen_img()
 
 					T val = static_cast <T> (distance / std::sqrt(3) * std::numeric_limits<T>::max());
 					//std::cerr << distance <<"," << (unsigned long)val << std::endl;
-					this->img_data[this->idx(x, y, z, c)] = val;
+					this->img_data.at(this->idx(x, y, z, c)) = val;
 				}
 			}
 		}
@@ -191,7 +191,7 @@ void Worley3D<T>::gen_img()
 		for (uint y = 0; y < this->res_y; y++) {
 			for (uint x = 0; x < this->res_x; x++) {
 				for (uint c = 0; c < WORLEY_NR_CHANNELS; c++) {
-					T val = this->img_data[this->idx(x, y, z, c)];
+					T val = this->img_data.at(this->idx(x, y, z, c));
 					if (WORLEY_NR_CHANNELS == 1) {
 						file << (unsigned long)val << ' ' << (unsigned long)val << ' ' << (unsigned long)val << std::endl;
 					}

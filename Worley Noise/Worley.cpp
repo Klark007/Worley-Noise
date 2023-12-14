@@ -27,10 +27,10 @@ void Worley<T>::print()
 		for (uint x = 0; x < this->res_x; x++) {
 			for (uint c = 0; c < this->nr_chl; c++) {
 				if (c == 2) {
-					std::cout << (unsigned long)(this->img_data[this->idx(x, y, c)]) << std::endl;
+					std::cout << (unsigned long)(this->img_data.at(this->idx(x, y, c))) << std::endl;
 				}
 				else {
-					std::cout << (unsigned long)(this->img_data[this->idx(x, y, c)]) << ' ';
+					std::cout << (unsigned long)(this->img_data.at(this->idx(x, y, c))) << ' ';
 				}
 			}
 		}
@@ -97,7 +97,7 @@ void Worley<T>::gen_img()
 				// assume we only use integer types as T
 				T val = static_cast <T> (distance / std::sqrt(2) * std::numeric_limits<T>::max());
 				//val = static_cast <T> ((ix + iy*g_x)*255/(g_x*g_y));
-				this->img_data[this->idx(x, y, c)] = val;
+				this->img_data.at(this->idx(x, y, c)) = val;
 #if WN_OUTPUT_TO_CONSOLE
 				if (WORLEY_NR_CHANNELS == 1) {
 					std::cout << (unsigned long)val << ' ' << (unsigned long)val << ' ' << (unsigned long)val << std::endl;
