@@ -20,6 +20,24 @@ Worley<T>::Worley(uint res_x, uint res_y, std::vector<std::pair<uint, uint> > gr
 }
 
 template<class T>
+void Worley<T>::print()
+{
+	std::cout << "P3\n" << this->res_x << ' ' << this->res_y << "\n255\n";
+	for (uint y = 0; y < this->res_y; y++) {
+		for (uint x = 0; x < this->res_x; x++) {
+			for (uint c = 0; c < this->nr_chl; c++) {
+				if (c == 2) {
+					std::cout << (unsigned long)(this->img_data[this->idx(x, y, c)]) << std::endl;
+				}
+				else {
+					std::cout << (unsigned long)(this->img_data[this->idx(x, y, c)]) << ' ';
+				}
+			}
+		}
+	}
+}
+
+template<class T>
 inline void Worley<T>::generate_points()
 {
 	for (uint c = 0; c < WORLEY_NR_CHANNELS; c++) {
@@ -42,7 +60,7 @@ void Worley<T>::gen_img()
 	std::cerr << "Size mult by: " << (unsigned long)std::numeric_limits<T>::max() << std::endl;
 
 #if WN_OUTPUT_TO_CONSOLE
-	std::cout << "P3\n" << res_x << ' ' << res_y << "\n255\n";
+	std::cout << "P3\n" << this->res_x << ' ' << this->res_y << "\n255\n";
 #endif
 
 	double max_dist = 0.0;

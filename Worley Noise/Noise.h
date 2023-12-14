@@ -10,7 +10,6 @@ class Noise
 public:
   Noise(uint x, uint y, uint c);
   Noise(uint x, uint y, uint z, uint c);
-  ~Noise();
 protected:
   uint res_x;
   uint res_y;
@@ -24,6 +23,8 @@ protected:
   inline uint idx(uint x, uint y, uint z, uint c) const;
 public:
   inline const T* get_data() const;
+  std::vector<T> get_channel(uint c) const;
+  void set_channel(uint c, std::vector<T>& data);
 };
 
 template<class T>

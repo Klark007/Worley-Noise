@@ -16,6 +16,7 @@ class Worley : public Noise<T>
 public:
 	// res gives resolution of image and grid gives size of the points used to generate worley noise with grid << res
 	Worley(uint res_x, uint res_y, std::vector<std::pair<uint, uint> > grid_res);
+	void print();
 private:
 	std::vector<std::pair<uint, uint> > grid_res;
 
