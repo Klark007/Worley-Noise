@@ -14,7 +14,7 @@
 #include "stb_image.h"
 #include "math_helper.h"
 
-#define WN_SAVE_TO_FILES false
+#define WN_SAVE_TO_FILES true
 #define WN_PROFILE true
 
 #if WN_PROFILE
@@ -23,19 +23,14 @@
 
 template<class T>
 Worley3D<T>::Worley3D(uint res_x, uint res_y, uint res_z, std::vector<std::tuple<uint, uint, uint>> grid_res)
-	: grid_res{ grid_res }
+	: Noise<T>(res_x,res_y,res_z,WORLEY_NR_CHANNELS), grid_res{ grid_res }
 {
-	img_data = new T[res_x * res_y * res_z * WORLEY_NR_CHANNELS];
-	r_x = res_x;
-	r_y = res_y;
-	r_z = res_z;
-
 #if WN_SAVE_TO_FILES
 	// change config: https://stackoverflow.com/questions/64042721/std-has-no-member-filesystem-in-c-17
 	if (!std::filesystem::exists("imgs")) {
 		std::filesystem::create_directory("imgs");
 	}
-	for (uint z = 0; z < r_z; z++) {
+	for (uint z = 0; z < this->res_z; z++) {
 		std::string name = "imgs/img" + std::to_string(z) + ".ppm";
 		files.push_back(std::ofstream (name, std::ofstream::out));
 	}
@@ -50,7 +45,7 @@ Worley3D<T>::Worley3D(uint res_x, uint res_y, uint res_z, std::vector<std::tuple
 	}
 
 	generate_points();
-	generate_img();
+	gen_img();
 }
 
 #if WN_PROFILE
@@ -69,10 +64,8 @@ inline uint gen_grid_idx(uint x, uint y, uint z, uint g_x, uint g_y) {
 template<class T>
 Worley3D<T>::~Worley3D()
 {
-	delete[] img_data;
-
 #if WN_SAVE_TO_FILES
-	for (uint z = 0; z < r_z; z++) {
+	for (uint z = 0; z < this->res_z; z++) {
 		files.at(z).close();
 	}
 #endif
@@ -110,20 +103,20 @@ inline void Worley3D<T>::generate_points()
 }
 
 template<class T>
-void Worley3D<T>::generate_img()
+void Worley3D<T>::gen_img()
 {
 	auto image_lamba = [&](uint z)
 	{
-		for (uint y = 0; y < r_y; y++) {
-			for (uint x = 0; x < r_x; x++) {
+		for (uint y = 0; y < this->res_y; y++) {
+			for (uint x = 0; x < this->res_x; x++) {
 				for (uint c = 0; c < WORLEY_NR_CHANNELS; c++) {
 					uint g_x = std::get<0>(grid_res[c]);
 					uint g_y = std::get<1>(grid_res[c]);
 					uint g_z = std::get<2>(grid_res[c]);
 
-					double px = remap((double)x + 0.5, 0.0, (double)r_x, 0.0, (double)g_x);
-					double py = remap((double)y + 0.5, 0.0, (double)r_y, 0.0, (double)g_y);
-					double pz = remap((double)z + 0.5, 0.0, (double)r_z, 0.0, (double)g_z);
+					double px = remap((double)x + 0.5, 0.0, (double)this->res_x, 0.0, (double)g_x);
+					double py = remap((double)y + 0.5, 0.0, (double)this->res_y, 0.0, (double)g_y);
+					double pz = remap((double)z + 0.5, 0.0, (double)this->res_z, 0.0, (double)g_z);
 
 					int ix = (int)floor(px);
 					int iy = (int)floor(py);
@@ -166,13 +159,13 @@ void Worley3D<T>::generate_img()
 
 					T val = static_cast <T> (distance / std::sqrt(3) * std::numeric_limits<T>::max());
 					//std::cerr << distance <<"," << (unsigned long)val << std::endl;
-					img_data[gen_img_idx(x, y, z, c)] = val;
+					this->img_data[this->idx(x, y, z, c)] = val;
 				}
 			}
 		}
 	};
 
-	std::vector<uint> z_range = std::vector<uint>(r_z);
+	std::vector<uint> z_range = std::vector<uint>(this->res_z);
 	std::iota(z_range.begin(), z_range.end(), 0);
 
 #if WN_PROFILE
@@ -186,19 +179,19 @@ void Worley3D<T>::generate_img()
 	);
 #if WN_PROFILE
 	auto end = std::chrono::steady_clock::now();
-	std::cout << "TIME: Duration in miliseconds: " << duration(begin, end)/r_z << std::endl;
+	std::cout << "TIME: Duration in miliseconds: " << duration(begin, end)/ this->res_z << std::endl;
 #endif
 
 #if WN_SAVE_TO_FILES
-	for (uint z = 0; z < r_z; z++) {
+	for (uint z = 0; z < this->res_z; z++) {
 
 		std::ofstream& file = files.at(z);
-		file << "P3\n" << r_x << ' ' << r_y << "\n255\n";
+		file << "P3\n" << this->res_x << ' ' << this->res_y << "\n255\n";
 
-		for (uint y = 0; y < r_y; y++) {
-			for (uint x = 0; x < r_x; x++) {
+		for (uint y = 0; y < this->res_y; y++) {
+			for (uint x = 0; x < this->res_x; x++) {
 				for (uint c = 0; c < WORLEY_NR_CHANNELS; c++) {
-					T val = img_data[gen_img_idx(x, y, z, c)];
+					T val = this->img_data[this->idx(x, y, z, c)];
 					if (WORLEY_NR_CHANNELS == 1) {
 						file << (unsigned long)val << ' ' << (unsigned long)val << ' ' << (unsigned long)val << std::endl;
 					}
