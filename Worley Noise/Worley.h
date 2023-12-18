@@ -1,7 +1,5 @@
 #pragma once
 
-typedef unsigned int uint;
-
 #include <map>
 #include <vector>
 #include <tuple>
