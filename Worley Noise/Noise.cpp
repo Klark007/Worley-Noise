@@ -47,5 +47,19 @@ void Noise<T>::set_channel(uint c, std::vector<T>& data)
 	}
 }
 
+template<class T>
+void Noise<T>::set_channel(uint c, std::vector<T>&& data)
+{
+	assert(0 <= c && c < nr_chl);
+	for (uint z = 0; z < res_z; z++) {
+		for (uint y = 0; y < res_y; y++) {
+			for (uint x = 0; x < res_x; x++) {
+				uint i = (y + z * res_y) * res_x + x;
+				img_data.at(idx(x, y, z, c)) = data.at(i);
+			}
+		}
+	}
+}
+
 
 template class Noise<unsigned char>;

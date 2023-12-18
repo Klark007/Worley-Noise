@@ -25,6 +25,7 @@ public:
   inline const T* get_data() const;
   std::vector<T> get_channel(uint c) const;
   void set_channel(uint c, std::vector<T>& data);
+  void set_channel(uint c, std::vector<T>&& data);
 };
 
 template<class T>
