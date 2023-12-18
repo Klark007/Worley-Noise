@@ -157,7 +157,7 @@ void Worley3D<T>::gen_img()
 						distance_to_point_in_grid(px, py, pz, ix + 1, iy + 1, iz + 1, c),
 						});
 
-					T val = static_cast <T> (distance / std::sqrt(3) * std::numeric_limits<T>::max());
+					T val = this->distance_to_val(distance / std::sqrt(3));
 					//std::cerr << distance <<"," << (unsigned long)val << std::endl;
 					this->img_data.at(this->idx(x, y, z, c)) = val;
 				}
@@ -248,5 +248,7 @@ double Worley3D<T>::distance_to_point_in_grid(double px, double py, double pz, i
 	return std::sqrt(std::pow(px + off_x - std::get<0>(gp), 2) + std::pow(py + off_y - std::get<1>(gp), 2) + (std::pow(pz + off_z - std::get<2>(gp), 2)));
 }
 
+
 // assume we only use integer types as T
 template class Worley3D<unsigned char>;
+template class Worley3D<float>;

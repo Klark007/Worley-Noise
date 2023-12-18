@@ -94,9 +94,7 @@ void Worley<T>::gen_img()
 				});
 				max_dist = std::max(distance, max_dist);
 
-				// assume we only use integer types as T
-				T val = static_cast <T> (distance / std::sqrt(2) * std::numeric_limits<T>::max());
-				//val = static_cast <T> ((ix + iy*g_x)*255/(g_x*g_y));
+				T val = this->distance_to_val(distance / std::sqrt(2));
 				this->img_data.at(this->idx(x, y, c)) = val;
 #if WN_OUTPUT_TO_CONSOLE
 				if (WORLEY_NR_CHANNELS == 1) {
@@ -143,5 +141,7 @@ double Worley<T>::distance_to_point_in_grid(double px, double py, int ix, int iy
 	return std::sqrt(std::pow(px + off_x - gp.first, 2) + std::pow(py + off_y - gp.second, 2));
 }
 
+
 // assume we only use integer types as T
 template class Worley<unsigned char>;
+template class Worley<float>;
