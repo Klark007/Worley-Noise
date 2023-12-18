@@ -14,7 +14,7 @@
 #include "stb_image.h"
 #include "math_helper.h"
 
-#define WN_SAVE_TO_FILES true
+#define WN_SAVE_TO_FILES false
 #define WN_PROFILE true
 
 #if WN_PROFILE

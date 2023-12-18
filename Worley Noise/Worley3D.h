@@ -7,7 +7,7 @@
 #include <fstream>
 #include "Noise.h"
 
-#define WORLEY_NR_CHANNELS 3
+#define WORLEY_NR_CHANNELS 4
 
 // assume we only use integer types as T
 template<class T>
