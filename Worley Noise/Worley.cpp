@@ -15,7 +15,6 @@ template<class T>
 Worley<T>::Worley(uint res_x, uint res_y, std::vector<std::pair<uint, uint> > grid_res)
 	: Noise<T>(res_x, res_y, WORLEY_NR_CHANNELS), grid_res {grid_res}
 {
-	generate_points();
 	gen_img();
 }
 
@@ -40,6 +39,8 @@ void Worley<T>::print()
 template<class T>
 inline void Worley<T>::generate_points()
 {
+	grid_points.clear();
+
 	for (uint c = 0; c < WORLEY_NR_CHANNELS; c++) {
 		uint g_x = grid_res[c].first;
 		uint g_y = grid_res[c].second;
@@ -57,6 +58,8 @@ inline void Worley<T>::generate_points()
 template<class T>
 void Worley<T>::gen_img()
 {
+	generate_points();
+
 	std::cerr << "Size mult by: " << (unsigned long)std::numeric_limits<T>::max() << std::endl;
 
 #if WN_OUTPUT_TO_CONSOLE
@@ -141,7 +144,5 @@ double Worley<T>::distance_to_point_in_grid(double px, double py, int ix, int iy
 	return std::sqrt(std::pow(px + off_x - gp.first, 2) + std::pow(py + off_y - gp.second, 2));
 }
 
-
-// assume we only use integer types as T
 template class Worley<unsigned char>;
 template class Worley<float>;

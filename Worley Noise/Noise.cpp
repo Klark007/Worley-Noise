@@ -172,5 +172,27 @@ void Noise<T>::scale(float s) {
 	std::for_each(img_data.begin(), img_data.end(), scl);
 }
 
+template<class T>
+void Noise<T>::add(std::vector<T>& data)
+{
+	int idx = 0;
+	auto add = [&idx,&data](T& v) { 
+		v += data.at(idx); 
+		idx++; 
+	};
+	std::for_each(img_data.begin(), img_data.end(), add);
+}
+
+template<class T>
+void Noise<T>::add(std::vector<T>&& data)
+{
+	int idx = 0;
+	auto add = [&idx, &data](T& v) {
+		v += data.at(idx);
+		idx++;
+	};
+	std::for_each(img_data.begin(), img_data.end(), add);
+}
+
 template class Noise<unsigned char>;
 template class Noise<float>;

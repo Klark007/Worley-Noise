@@ -27,4 +27,13 @@ private:
 
 	void gen_img() override;
 	double distance_to_point_in_grid(double px, double py, double pz, int ix, int iy, int iz, uint ic) const;
+public:
+	inline void regenerate(std::vector<std::tuple<uint, uint, uint> > grid_res);
 };
+
+template<class T>
+inline void Worley3D<T>::regenerate(std::vector<std::tuple<uint, uint, uint>> grid_res)
+{
+	grid_res = grid_res;
+	gen_img();
+}

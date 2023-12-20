@@ -30,6 +30,7 @@ public:
   inline const T* get_data() const;
   inline std::vector<T> get_vec();
   std::vector<T> get_channel(uint c) const;
+  // should use const &
   void set_channel(uint c, std::vector<T>& data);
   void set_channel(uint c, std::vector<T>&& data);
 
@@ -46,6 +47,8 @@ public:
   // operators on all channels
   void invert();
   void scale(float s);
+  void add(std::vector<T>& data);
+  void add(std::vector<T>&& data);
 };
 
 

@@ -44,7 +44,6 @@ Worley3D<T>::Worley3D(uint res_x, uint res_y, uint res_z, std::vector<std::tuple
 		grid_points[c] = std::vector<std::tuple<double, double, double>>(g_z * g_y * g_x);
 	}
 
-	generate_points();
 	gen_img();
 }
 
@@ -105,6 +104,8 @@ inline void Worley3D<T>::generate_points()
 template<class T>
 void Worley3D<T>::gen_img()
 {
+	generate_points();
+
 	auto image_lamba = [&](uint z)
 	{
 		for (uint y = 0; y < this->res_y; y++) {
