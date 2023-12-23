@@ -23,7 +23,6 @@ inline WorleyFBM<T>::WorleyFBM(uint res_x, uint res_y, std::vector<std::pair<uin
   gen_img();
 }
 
-#include <iostream>
 template<class T>
 inline void WorleyFBM<T>::gen_img()
 {

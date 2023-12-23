@@ -34,6 +34,15 @@ public:
 template<class T>
 inline void Worley3D<T>::regenerate(std::vector<std::tuple<uint, uint, uint>> grid_res)
 {
-	grid_res = grid_res;
+	this->grid_res = grid_res;
+
+	for (uint c = 0; c < WORLEY_NR_CHANNELS; c++) {
+		uint g_x = std::get<0>(grid_res[c]);
+		uint g_y = std::get<1>(grid_res[c]);
+		uint g_z = std::get<2>(grid_res[c]);
+
+		this->grid_points[c].resize(g_z * g_y * g_x);
+	}
+
 	gen_img();
 }

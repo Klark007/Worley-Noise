@@ -15,7 +15,7 @@
 #include "math_helper.h"
 
 #define WN_SAVE_TO_FILES false
-#define WN_PROFILE true
+#define WN_PROFILE false
 
 #if WN_PROFILE
 #include <chrono>
