@@ -114,7 +114,6 @@ void Worley3D<T>::gen_img()
 					uint g_x = std::get<0>(grid_res[c]);
 					uint g_y = std::get<1>(grid_res[c]);
 					uint g_z = std::get<2>(grid_res[c]);
-					uint g_z = std::get<2>(grid_res[c]);
 
 					double px = remap((double)x + 0.5, 0.0, (double)this->res_x, 0.0, (double)g_x);
 					double py = remap((double)y + 0.5, 0.0, (double)this->res_y, 0.0, (double)g_y);
