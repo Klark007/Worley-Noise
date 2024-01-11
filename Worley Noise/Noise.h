@@ -23,11 +23,12 @@ protected:
   virtual void gen_img();
 
   std::vector<T> img_data;
+public:
+  inline const T* get_data() const;
+
   inline uint idx(uint x, uint y, uint c) const;
   inline uint idx(uint x, uint y, uint z, uint c) const;
 
-public:
-  inline const T* get_data() const;
   inline std::vector<T> get_vec();
   std::vector<T> get_channel(uint c) const;
   // should use const &
@@ -49,6 +50,11 @@ public:
   void scale(float s);
   void add(std::vector<T>& data);
   void add(std::vector<T>&& data);
+  void normalize();
+
+  T min();
+  T max();
+  bool contains_nan();
 };
 
 

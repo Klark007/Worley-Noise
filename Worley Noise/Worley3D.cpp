@@ -106,13 +106,14 @@ void Worley3D<T>::gen_img()
 {
 	generate_points();
 
-	auto image_lamba = [&](uint z)
+	auto image_lambda = [&](uint z)
 	{
 		for (uint y = 0; y < this->res_y; y++) {
 			for (uint x = 0; x < this->res_x; x++) {
 				for (uint c = 0; c < WORLEY_NR_CHANNELS; c++) {
 					uint g_x = std::get<0>(grid_res[c]);
 					uint g_y = std::get<1>(grid_res[c]);
+					uint g_z = std::get<2>(grid_res[c]);
 					uint g_z = std::get<2>(grid_res[c]);
 
 					double px = remap((double)x + 0.5, 0.0, (double)this->res_x, 0.0, (double)g_x);
@@ -176,7 +177,7 @@ void Worley3D<T>::gen_img()
 		std::execution::par,
 		z_range.begin(),
 		z_range.end(),
-		image_lamba
+		image_lambda
 	);
 #if WN_PROFILE
 	auto end = std::chrono::steady_clock::now();

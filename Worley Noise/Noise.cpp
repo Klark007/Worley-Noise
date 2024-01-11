@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <limits>
 #include <cassert>
+#include <cmath>
 
 template<class T>
 Noise<T>::Noise(uint x, uint y, uint c)
@@ -192,6 +193,46 @@ void Noise<T>::add(std::vector<T>&& data)
 		idx++;
 	};
 	std::for_each(img_data.begin(), img_data.end(), add);
+}
+
+template<class T>
+void Noise<T>::normalize()
+{
+	T min_v = min();
+	T max_v = max();
+
+	auto normalize_lambda = [&](T& v) {
+		v = (v - min_v) / (max_v - min_v);
+	};
+	std::for_each(img_data.begin(), img_data.end(), normalize_lambda);
+}
+
+template<class T>
+T Noise<T>::min()
+{
+	return *std::min_element(img_data.begin(), img_data.end());
+}
+
+template<class T>
+T Noise<T>::max()
+{
+	return *std::max_element(img_data.begin(), img_data.end());
+}
+
+template<class T>
+bool Noise<T>::contains_nan()
+{
+	return false;
+}
+
+bool Noise<float>::contains_nan()
+{
+	bool is_nan = false;
+	auto nan_check = [&is_nan](float& v) {
+		is_nan = is_nan || std::isnan<float>(v);
+	};
+	std::for_each(img_data.begin(), img_data.end(), nan_check);
+	return is_nan;
 }
 
 template class Noise<unsigned char>;
