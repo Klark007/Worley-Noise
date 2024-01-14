@@ -174,6 +174,13 @@ void Noise<T>::scale(float s) {
 }
 
 template<class T>
+void Noise<T>::add(T val)
+{
+	auto add = [&val](T& v) { v = v + val; };
+	std::for_each(img_data.begin(), img_data.end(), add);
+}
+
+template<class T>
 void Noise<T>::add(std::vector<T>& data)
 {
 	int idx = 0;
@@ -193,6 +200,13 @@ void Noise<T>::add(std::vector<T>&& data)
 		idx++;
 	};
 	std::for_each(img_data.begin(), img_data.end(), add);
+}
+
+template<class T>
+void Noise<T>::clamp(T min, T max)
+{
+	auto clp = [&min, &max](T& v) { v = std::clamp(v, min, max); };
+	std::for_each(img_data.begin(), img_data.end(), clp);
 }
 
 template<class T>

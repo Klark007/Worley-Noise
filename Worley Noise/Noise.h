@@ -48,8 +48,10 @@ public:
   // operators on all channels
   void invert();
   void scale(float s);
+  void add(T val);
   void add(std::vector<T>& data);
   void add(std::vector<T>&& data);
+  void clamp(T min, T max);
   void normalize();
 
   T min();
